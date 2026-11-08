@@ -4,10 +4,8 @@ This folder retrains FARMERS’ LSTGBM (Long Short-Term Gradient Boosting Model)
 
 ## Deliverables
 
-All paths are relative to this folder (`final_submission/`).
-
 | Deliverable | Path |
-|---|---|
+| --- | --- |
 | Forecast for the test period (official CSV, 26,920 rows, 5 Oct to 1 Nov 2026) | [`submission.csv`](submission.csv) |
 | Evaluation report | [`FARMERS Turku Energia Evaluation Report.pdf`](<FARMERS Turku Energia Evaluation Report.pdf>) |
 | Presentation deck | [`FARMERS - LSTGBM Final.pptx`](<FARMERS - LSTGBM Final.pptx>) |
@@ -22,7 +20,7 @@ All paths are relative to this folder (`final_submission/`).
 
 Not included, because of the Nord Pool licence: the organizer's starter package data (`inputs.parquet`, `spot_nordpool.csv`, `actuals_validation.csv`). The dashboard needs them in `starter_package_v1/data/` (or in `RADAR_DATA_DIR` when deployed).
 
-Run the dashboard locally from the repository root: `python final_submission/dashboard/serve.py --port 8770`, then open http://127.0.0.1:8770.
+Run the dashboard locally from the repository root: `python final_submission/dashboard/serve.py --port 8770`, then open <http://127.0.0.1:8770>.
 
 Use Python 3.13 and install the pinned dependencies:
 
