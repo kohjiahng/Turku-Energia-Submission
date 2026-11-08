@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" data-theme="auto"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radar</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--fg:#14202e;--mute:#5c6b7d;--line:#d9e0e8;--fc:#007A5A;--spot:#C2185B;--up:#D55E00;--down:#0072B2;--ok:#E8F3EE;--r:16px}
+:root[data-theme=dark]{--bg:#0c121a;--card:#151d28;--fg:#e8eef6;--mute:#93a3b7;--line:#263140;--fc:#3ec79f;--spot:#f06292;--up:#ff9a55;--down:#5ab4ff;--ok:#16261f}
+@media (prefers-color-scheme:dark){:root[data-theme=auto]{--bg:#0c121a;--card:#151d28;--fg:#e8eef6;--mute:#93a3b7;--line:#263140;--fc:#3ec79f;--spot:#f06292;--up:#ff9a55;--down:#5ab4ff;--ok:#16261f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:12px 12px 40px}
+.top{position:relative;display:flex;align-items:center;gap:8px;margin-bottom:10px}.lctl{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:8px;align-items:center}.top #run{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}@media(max-width:860px){.lctl,.top #run{position:static;transform:none}}.top h1{font-size:18px;margin:0;flex:1}
+button,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer}
+button.on{background:var(--fg);color:var(--bg)}
+.card{background:var(--card);border-radius:var(--r);padding:14px;border:1px solid var(--line);position:relative}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--mute) transparent}
+@supports selector(::-webkit-scrollbar){
+  .days{scrollbar-width:auto;scrollbar-color:auto}
+  .days::-webkit-scrollbar{height:6px}
+  .days::-webkit-scrollbar-track{background:transparent}
+  .days::-webkit-scrollbar-thumb{background:var(--mute);border-radius:999px}
+  .days::-webkit-scrollbar-thumb:hover{background:var(--fg)}
+}
+.day{flex:0 0 auto;width:62px;border-radius:12px;border:2px solid transparent;padding:6px 4px;text-align:center;cursor:pointer;background:var(--bg)}
+.day b{display:block;font-size:17px}.day small{display:block;color:var(--mute);font-size:11px}.day i{display:block;height:6px;border-radius:3px;margin:5px 4px 0}
+.day.sel{border-color:var(--fc)}
+.hours{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.hr{padding:3px 0;width:calc((100% - 92px)/24 + 0px);min-width:26px;border-radius:6px;text-align:center;font-size:11px;cursor:pointer;background:var(--bg);color:var(--mute);position:relative}
+.hr.sel{background:var(--fc);color:#fff}.hr.act::after,.hr.watch::after{content:"";position:absolute;left:30%;right:30%;bottom:1px;height:3px;border-radius:2px;background:var(--up)}.hr.act::after{background:#C62828}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}}
+.g{text-align:center}.g h3{font-size:12px;margin:0;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}.g .v{font-size:28px;font-weight:800;margin-top:-30px;position:relative}.g small{color:var(--mute);font-size:12px}
+.tug{height:18px;border-radius:9px;background:var(--down);overflow:hidden;margin:14px 0 6px}.tug div{height:100%;background:var(--up)}
+.tk{display:grid;grid-template-columns:repeat(5,1fr);margin:3px 10px 0 44px;font-size:10px;color:var(--mute)}
+.sub{margin:8px 0 0}.sub .h4{margin-bottom:2px}.lg i.sq{height:10px;width:10px;border:0;border-radius:2px;opacity:.9}
+.slot{height:30px;border-radius:4px;font-size:9px;display:flex;align-items:flex-end;justify-content:center;color:#fff;cursor:pointer;position:relative}
+.slot.s{outline:2px solid var(--fg)}
+.h4{font-size:12px;color:var(--mute);margin:0 0 4px;text-transform:uppercase;letter-spacing:.08em}
+.row{display:block;margin-top:10px}
+.tabs{display:flex;margin-left:14px;border:1px solid var(--line);border-radius:999px;overflow:hidden}.tabs a{padding:5px 16px;font-size:13px;font-weight:600;text-decoration:none;color:var(--fg)}.tabs a.on{background:var(--fg);color:var(--bg)}.tabs a:not(.on):hover{background:var(--bg)}
+.synth{margin-left:10px;padding:2px 10px;border-radius:999px;background:#FFE9B8;color:#5a3d00;font-size:12px;font-weight:700}
+#live{font-weight:700}#live.on{background:#E53935;border-color:#E53935;color:#fff}#live.on::before{content:"● ";animation:blink 1.4s infinite}@keyframes blink{50%{opacity:.35}}
+[hidden]{display:none!important}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(380px,92vw);background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);z-index:21;display:flex;flex-direction:column;visibility:hidden;max-height:100vh;overflow:hidden}
+.drawer.wide{width:min(620px,96vw)}
+.drawer.open{transform:none;visibility:visible}
+.drawer header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.drawer header b{font-size:15px}.drawer .body{padding:12px 16px 24px;overflow:auto;flex:1;min-height:0}
+@media (prefers-reduced-motion:reduce){.drawer,.scrim{transition:none}}
+.top-alert{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;border-left:5px solid #E0A82E;background:var(--bg);border-radius:0 12px 12px 0;padding:10px 14px;margin:0 0 12px;font-size:14px;cursor:pointer}
+.top-alert.act{border-color:#E53935}.top-alert.info{border-color:#2E9E5B}.top-alert .when{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}.top-alert .what{font-weight:700}.top-alert .chg{color:var(--mute)}
+.top-alert.pin{box-shadow:0 0 0 2px var(--fg) inset}.top-alert .nv{margin-left:auto;display:inline-flex;align-items:center;gap:6px}.top-alert .nv small{color:var(--mute);font-size:12px}.top-alert .nv-b{padding:0 9px;font-size:16px;line-height:22px;border-radius:999px}
+.top-alert .chk{flex-basis:100%;margin-top:2px;font-weight:600}
+.ab{border-left:4px solid var(--up);padding:4px 10px;margin:6px 0;background:var(--bg);border-radius:0 8px 8px 0;font-size:14px}.ab.act{border-color:#C62828}
+.zm{display:inline-flex;margin-left:8px}.zm button{padding:3px 9px;border-radius:0;min-width:30px}.zm button:first-child{border-radius:8px 0 0 8px}.zm button:last-child{border-radius:0 8px 8px 0}.zm button+button{margin-left:-1px}
+.chd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px}.chd .h4{margin:6px 0 0}.lg{display:flex;gap:2px 8px;flex-wrap:wrap;justify-content:flex-end;font-size:13px;color:var(--fg);margin:0}.lg .grp{display:inline-flex;gap:10px;align-items:center}.lg .grp b{color:var(--fg);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.lg .grp small{font-size:11px}.lg .grp{flex-wrap:wrap;gap:4px 10px}.lg .dv{width:1px;height:16px;background:var(--line)}.lgi{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12px;color:var(--fg);background:none;border:1px solid transparent;border-radius:8px;padding:2px 6px;cursor:pointer;min-width:0}.lgi:hover{border-color:var(--line)}.lgi.off{opacity:.4;text-decoration:line-through}.lgi.nostrike{text-decoration:none}.lgi small{color:var(--mute);font-size:11px}.lgi i.sq+i.sq{margin-left:-3px}.lg i.th{border-top-width:3px;opacity:.55}.lg span{display:inline-flex;align-items:center;gap:5px}.lg i{display:inline-block;width:18px;height:0;border-top:3px solid}.lg i.b{height:10px;border:0;border-radius:2px;opacity:.3}.lg i.d{border-top-style:dashed;border-top-width:2px}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700;background:var(--ok);color:var(--fc)}
+.gl{stroke:var(--line)}.gz{stroke:var(--mute)}.gm{stroke:var(--mute);stroke-dasharray:2 3}.ax{fill:var(--mute);font-size:10px}.xh{stroke:var(--mute)}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);padding:5px 9px;border-radius:7px;font-size:12px;white-space:nowrap;z-index:4}
+.err{color:#C62828;padding:16px}
+details.mx{margin-top:10px}details.mx>summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none;display:flex;align-items:center;gap:10px}
+details.mx>summary::-webkit-details-marker{display:none}details.mx>summary::before{content:"▸";transition:transform .15s}details.mx[open]>summary::before{transform:rotate(90deg)}
+details.mx>summary small{font-weight:400;color:var(--mute);font-size:12px}
+.mxbar{display:flex;gap:6px;align-items:center;margin:12px 0 4px;flex-wrap:wrap}.mxbar .note{color:var(--mute);font-size:12px;margin-left:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:8px 0 14px}
+.tile{background:var(--bg);border-radius:12px;padding:10px 12px}.tile h4{margin:0;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.tile b{display:block;font-size:24px;font-weight:800;margin:2px 0;font-variant-numeric:tabular-nums}.tile small{display:block;color:var(--mute);font-size:12px;line-height:1.35}
+.tile .good{color:#1B7F3B}.tile .bad{color:#C62828}
+:root[data-theme=dark] .tile .good{color:#4CD07D}:root[data-theme=dark] .tile .bad{color:#FF6B6B}
+@media (prefers-color-scheme:dark){:root[data-theme=auto] .tile .good{color:#4CD07D}:root[data-theme=auto] .tile .bad{color:#FF6B6B}}
+.mxcharts{display:grid;grid-template-columns:1fr;gap:10px}
+.mxc{background:var(--bg);border-radius:12px;padding:10px 12px}.mxc h4{margin:0 0 4px;font-size:12px;font-weight:600;color:var(--fg)}.mxc h4 small{font-weight:400;color:var(--mute)}.mxc h4{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.mxc .mlg{display:inline-flex;gap:10px;font-weight:400;color:var(--fg);font-size:11px}.mxc .mlg i{display:inline-block;vertical-align:middle;margin-right:4px}.mlg .sq{width:9px;height:9px;border-radius:2px;background:var(--fc)}.mlg .ln{width:16px;border-top:2px dashed var(--spot)}.mlg .tg{width:16px;border-top:2px dashed var(--mute)}
+.drv{margin-bottom:10px}.stk{display:flex;height:26px;border-radius:7px;overflow:hidden;margin:3px 0 8px}.stk>div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
+.stkrow{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:8px;font-size:12px;color:var(--mute)}
+.gleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;margin:2px 0 10px}.gleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.flist{display:grid;grid-template-columns:minmax(0,1.6fr) 56px minmax(0,1fr);gap:4px 10px;align-items:center;font-size:12px}.flist .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.flist .bar i{display:block;height:100%}.flist.gl{margin-bottom:12px;font-size:13px}.flist .bar.big{height:14px;border-radius:5px}
+.flist .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--fg)}.drv .fn{font-size:11px;color:var(--mute);margin-top:8px}
+.mxc svg text{fill:var(--mute);font-size:10px}.mxc .glx{stroke:var(--line)}
+</style></head><body><main>
+<div class="top"><h1>Radar</h1><div class="lctl" id="lctl" hidden></div><select id="run"></select><span class="synth" id="synth" hidden>Synthetic demo data</span><nav class="tabs" aria-label="Pages"><a id="tabE" href="?">Explore</a><a id="tabL" href="?run=live" hidden>Live</a></nav><button id="mbtn" class="abtn" aria-haspopup="dialog" aria-controls="mx" aria-expanded="false">Metrics</button><button id="theme" aria-label="Toggle theme">◐</button></div>
+<div class="card"><div class="days" id="days"></div><div class="hours" id="hours"></div>
+ <div id="ctl" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button id="prev">←</button><button id="play">▶ Play</button><button id="ff" title="Speed: click to cycle 1×, 2×, 4× (Play, and on the Live tab the simulated feed)">1×</button><button id="next">→</button><select id="demo"></select><button id="live" hidden></button></div></div>
+<div class="cards" id="cards"></div>
+<div class="row"><div class="card" id="cb"><div class="top-alert" id="ta" hidden></div><div class="chd"><div style="display:flex;align-items:center;flex-wrap:wrap"><p class="h4">Price €/MWh</p><span class="zm" role="group" aria-label="Zoom"><button id="zout" aria-label="Zoom out" title="Zoom out (−)">−</button><button id="zrst" title="Reset zoom (0)">1×</button><button id="zin" aria-label="Zoom in" title="Zoom in (+). Also Ctrl + scroll or pinch on the chart.">+</button></span></div><div class="lg" id="lg"></div></div><div id="chart"></div></div>
+</div></div>
+
+</main>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer wide" id="mx" role="dialog" aria-label="Metrics" aria-hidden="true"><header><b>Metrics</b><button id="mclose" aria-label="Close">✕</button></header>
+ <div class="body"><div class="mxbar"><div class="seg" id="mxscope"><button data-s="run" class="on">Whole run</button><button data-s="day">Day of this forecast</button><button data-s="7">7 days</button><button data-s="30">30 days</button></div><span class="note" id="mxnote"></span></div>
+ <div id="mxbody"></div></div></aside>
+<script type="module">
+import {setApiBase,Session,runSelect,demoSelect,keys,$,fmt,api,summary,showError,esc,sevLevel,level,cleanMsg} from "/shared/common.js";
+import {LiveChart} from "/shared/live.js";
+const isLiveRun=new URLSearchParams(location.search).get("run")==="live";const newSid=()=>(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()).replace(/[^A-Za-z0-9_-]/g,"");
+// a `sid` in the URL is a Live session the Explore page pre-built for this click; it is used once and removed, so a reload starts a fresh one
+const urlSid=new URLSearchParams(location.search).get("sid"),SID=/^[A-Za-z0-9_-]{8,64}$/.test(urlSid||"")?urlSid:newSid();
+if(urlSid){const q=new URLSearchParams(location.search);q.delete("sid");history.replaceState(null,"",location.pathname+(q.toString()?"?"+q:""));}   // one simulated Live session per page load: reload = fresh clock
+if(isLiveRun)setApiBase("/live",{sid:SID});if(isLiveRun){for(const id of["prev","play","next"])$(id).hidden=true;$("lctl").append($("live"),$("ff"));$("lctl").hidden=false;document.querySelector("nav.tabs").after($("synth"));$("ctl").hidden=true;}   // Live: speed and Live buttons sit top centre of the page   // the Live tab talks to the simulated Live app under /live/
+let reveal=new URLSearchParams(location.search).get("future")==="1";  // ?future=1 starts with the Future toggle on
+const s=new Session((f,a,err)=>{ if(err) return showError($("chart"),err); s.last=[f,a]; draw(f,a); });
+let LIVE=new URLSearchParams(location.search).get("live")==="1",feedDown=false,lastGrow=Date.now();   // live mode: ?live=1, or automatically for the synthetic live demo run
+const liveBtn=()=>{if(!LIVE||!s.tl)return;const f=s.idx===s.n-1,b=$("live"),stale=Date.now()-lastGrow>45000;b.hidden=false;b.classList.toggle("on",f&&!feedDown);b.textContent=feedDown?"Server unreachable, retrying":(f?"Live":`Back to live (${s.n-1-s.idx} behind)`)+(stale?" · no new forecast for "+Math.round((Date.now()-lastGrow)/1000)+" s":"");};
+s.listeners.push(()=>{ $("play").textContent=s.playing?"❚❚ Pause":"▶ Play"; if(s.tl){ navSync(); liveBtn(); } });
+// theme
+const th=localStorage.getItem?.("radar-theme");try{if(th)document.documentElement.dataset.theme=th}catch{}
+$("theme").onclick=()=>{const d=document.documentElement,n=(d.dataset.theme==="dark"||(d.dataset.theme==="auto"&&matchMedia("(prefers-color-scheme:dark)").matches))?"light":"dark";d.dataset.theme=n;try{localStorage.setItem("radar-theme",n)}catch{}s.last&&draw(...s.last)};
+// day tiles + hour pills
+function dayInfo(){const g={};s.tl.times.forEach((t,i)=>{const k=fmt.dayKey(t);(g[k]=g[k]||[]).push(i)});return g;}
+function colour(v){return v>=.5?"#C62828":v>=.3?"#D55E00":v>=.15?"#E0A82E":"#5BAE8F";}
+function buildDays(){
+  const g=dayInfo();let h="";
+  Object.entries(g).forEach(([k,ix])=>{const t=s.tl.times[ix[0]],mx=Math.max(...ix.map(i=>Math.max(s.tl.max_p_spike_high[i],s.tl.max_p_spike_low[i])));
+   h+=`<div class="day" data-k="${k}" title="Max spike risk ${fmt.pct(mx)}"><small>${fmt.day(t).split(" ")[0]}</small><b>${fmt.day(t).split(" ")[1]}</b><small>${fmt.day(t).split(" ")[2]}</small><i style="background:${colour(mx)}"></i></div>`;});
+  $("days").innerHTML=h;$("days").querySelectorAll(".day").forEach(d=>d.onclick=()=>{const ix=g[d.dataset.k];s.go(ix.find(i=>fmt.h(s.tl.times[i])==="12")??ix[0]);});
+}
+function navSync(){
+  const g=dayInfo(),k=fmt.dayKey(s.origin);
+  $("days").querySelectorAll(".day").forEach(d=>{d.classList.toggle("sel",d.dataset.k===k);if(d.dataset.k===k){const c=$("days");c.scrollLeft=d.offsetLeft-c.offsetLeft-(c.clientWidth-d.offsetWidth)/2;}});  // scroll the strip only, never the page
+  $("hours").innerHTML=g[k].map(i=>{const sv=sevLevel(s.tl.max_severity[i]);return `<div class="hr ${i===s.idx?"sel ":""}${sv===2?"act":sv===1?"watch":""}" data-i="${i}">${fmt.h(s.tl.times[i])}</div>`}).join("");
+  $("hours").querySelectorAll(".hr").forEach(e=>e.onclick=()=>s.go(+e.dataset.i));
+}
+const NOIMB=+new URLSearchParams(location.search).get("noimb")||10;  // EUR/MWh: below this expected |p50 - spot| over the next 2 h, the grid card says "no imbalance expected"
+function gauge(p,label,sub){
+  const a=Math.PI*Math.min(1,p/0.8),r=44,cx=55,cy=55,x=cx-r*Math.cos(a),y=cy-r*Math.sin(a),col=colour(p);
+  return `<div class="card g"><h3>${label}</h3><svg viewBox="0 0 110 62" width="130" role="img" aria-label="${label} ${fmt.pct(p)}"><path d="M11 55 A44 44 0 0 1 99 55" fill="none" stroke="var(--line)" stroke-width="9" stroke-linecap="round"/><path d="M11 55 A44 44 0 0 1 ${x} ${y}" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round"/></svg><div class="v">${fmt.pct(p)}</div><small>${sub}</small></div>`;
+}
+function draw(f,a){
+  const m=summary(f),r=f.rows,pu=m.pUp2h,ph=Math.max(...r.map(x=>x.p_spike_high)),pl=Math.max(...r.map(x=>x.p_spike_low));
+  $("cards").innerHTML=gauge(ph,"Price jump risk","peak "+fmt.hm(m.hi.t))+gauge(pl,"Price drop risk","peak "+fmt.hm(m.lo.t))+
+   `<div class="card g"><h3>Grid needs · next 2 h</h3><div class="tug" role="img" aria-label="${fmt.pct(pu)} up"><div style="width:${pu*100}%"></div></div><div style="display:flex;justify-content:space-between;font-size:13px"><b style="color:var(--up)">▲ More ${fmt.pct(pu)}</b><b style="color:var(--down)">▼ Less ${fmt.pct(1-pu)}</b></div></div>`+
+   `<div class="card g"><h3>Next quarter</h3><div style="font-size:30px;font-weight:800;margin-top:8px">${fmt.eur(m.p50now)} <span style="font-size:14px;font-weight:600;color:var(--mute)">€/MWh</span></div><small>${fmt.eur(m.p10now)} to ${fmt.eur(m.p90now)} €/MWh</small></div>`;
+  lc.setReveal(reveal);lc.setAlerts(a);lc.setForecast(f);
+  const seen=reveal?r.filter(x=>x.imbalance!=null):[],hit=seen.filter(x=>x.imbalance>=x.p10&&x.imbalance<=x.p90).length;
+  const it=(k,sw,label)=>`<button class="lgi${lc.vis[k]?"":" off"}" data-k="${k}" aria-pressed="${lc.vis[k]}" title="Show / hide">${sw}${label}</button>`;
+  $("lg").innerHTML=it("actual",'<i style="border-color:var(--fg);width:11px"></i><i class="d" style="border-color:var(--fg);width:11px;margin-left:-3px"></i>',"Actual")+it("best",'<i style="border-color:var(--fc)"></i>',"Predicted")+it("spot",'<i class="d" style="border-color:var(--spot)"></i>',"Spot")+(`<button class="lgi${reveal?"":" off nostrike"}" data-k="future" aria-pressed="${reveal}" title="Show the actual prices after the forecast time (what happened)"><i class="d" style="border-color:var(--fg);border-top-style:dotted;width:16px"></i>Future${reveal&&seen.length?` <small>${hit}/${seen.length} in range</small>`:""}</button>`);
+  $("lg").querySelectorAll(".lgi").forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==="future"){reveal=!reveal;lc.setReveal(reveal);s.last&&draw(...s.last);return;}const on=!lc.vis[k];lc.setVis(k,on);(PAIR[k]||[]).forEach(x=>lc.setVis(x,on));b.classList.toggle("off",!lc.vis[k]);b.setAttribute("aria-pressed",lc.vis[k]);try{localStorage.setItem("radar-vis",JSON.stringify(lc.vis))}catch{}});
+  topAlert(f,a);
+}
+const mx=$("mx"),mxOpen=()=>mx.classList.contains("open");
+$("scrim").onclick=()=>openMx(false);
+const openMx=o=>{mx.classList.toggle("open",o);$("scrim").classList.toggle("open",o);mx.setAttribute("aria-hidden",!o);$("mbtn").setAttribute("aria-expanded",o);if(o){$("mclose").focus({preventScroll:true});loadMetrics();}};
+$("mbtn").onclick=()=>openMx(!mxOpen());$("mclose").onclick=()=>openMx(false);
+// Banner above the chart: the single most useful alert as window · what changed · one thing to check.
+const RANK={spike_high:0,spike_low:0,revision:1,regulation_up:2,regulation_down:2,conflict:3,uncertainty:4,expert_review:5};
+// One alert as banner content: window, label, what changed, one thing to check.
+function alertView(h,f){
+  const ev=h.evidence||{},st=+new Date(h.window.start),en=+new Date(h.window.end);
+  let what=h.title,chg="",chk=h.review;
+  if(h.rule==="spike_high"||h.rule==="spike_low"){
+    const up=h.rule==="spike_high",k=up?"p_spike_high":"p_spike_low",rows=f.rows.filter(r=>+new Date(r.t)>=st&&+new Date(r.t)<en);
+    const pk=rows.reduce((b,r)=>!b||r[k]>b[k]?r:b,null);
+    what=up?"High-price risk":"Low-price risk";
+    chg=`Peaks at ${fmt.pct(pk?pk[k]:ev.max_p_spike)}${pk?" at "+fmt.hm(pk.t):""}${ev.rise_pp>=1?` · up ${Math.round(ev.rise_pp)} pp since last update`:""}`;
+    chk=up?"Check whether our short position overlaps this window.":"Check whether our long position overlaps this window.";
+  }else chg=cleanMsg(h.message).split(" Drivers:")[0].replace(/\.$/,"");
+  // red: high- or low-price risk, yellow: imbalance expected
+  return {cls:/^spike_/.test(h.rule)?"act":"watch",t0:st,t1:en,what,chg:chg,chk};
+}
+let taList=[],taIdx=0,taKey="",taPin=false;
+function taShow(){
+  const el=$("ta"),v=taList[taIdx];
+  if(!v){el.hidden=true;lc.setHighlight(null);return;}
+  const n=taList.length;
+  el.className="top-alert "+v.cls+(taPin?" pin":"");el.hidden=false;
+  el.title=taPin?"Click to unpin the window on the chart":"Hover or click to mark this window on the chart";
+  el.innerHTML=`<span class="when">${fmt.range(v.t0,v.t1)}</span><span class="what">${esc(v.what)}</span><span class="chg">${v.chg}</span>${n>1?`<span class="nv" role="group" aria-label="Alerts"><button class="nv-b" data-d="-1" aria-label="Previous alert">‹</button><small>${taIdx+1} of ${n}</small><button class="nv-b" data-d="1" aria-label="Next alert">›</button></span>`:""}<div class="chk">${esc(v.chk)}</div>`;
+  if(taPin||el.matches(":hover"))lc.setHighlight(v.t0,v.t1);else lc.setHighlight(null);
+}
+function topAlert(f,a){
+  const al=a.alerts||[],key=f.origin+"|"+s.run;
+  const r8=f.rows.slice(0,8),exp2=r8.reduce((t,x)=>t+Math.abs(x.p50-x.spot),0)/Math.max(1,r8.length),calm=exp2<NOIMB;
+  const regOnly=al.every(h=>/^regulation_/.test(h.rule)||(/^(uncertainty|expert_review)/.test(h.rule)&&h.severity!=="act"));
+  if(calm&&regOnly){
+    taList=[{cls:"info",t0:+new Date(f.rows[0].t),t1:+new Date(r8[r8.length-1].t)+9e5,what:"Minimal imbalance expected",chg:`Price expected within ${NOIMB} €/MWh of spot (average ${fmt.eur(exp2)})`,chk:"Nothing to act on in the next 2 hours."}];
+  }else{
+    const pri=h=>[h.severity==="act"?0:h.severity==="watch"?1:2,RANK[h.rule]??6,-(h.evidence?.max_p_spike||0)];
+    taList=[...al].sort((x,y)=>{const p=pri(x),q=pri(y);return p[0]-q[0]||p[1]-q[1]||p[2]-q[2];}).map(h=>alertView(h,f));
+  }
+  if(!taList.length){const rs=f.rows;taList=[{cls:"info",t0:+new Date(rs[0].t),t1:+new Date(rs[rs.length-1].t)+9e5,what:"No problems expected",chg:"No alerts for the forecast period",chk:"Nothing to act on."}];}  // green all-clear instead of hiding the banner
+  if(key!==taKey){const P=new URLSearchParams(location.search);taIdx=taKey?0:+P.get("alert")||0;taPin=!taKey&&P.get("pin")==="1";taKey=key;}  // ?alert=1&pin=1: start on the 2nd alert with its window marked (screenshots)
+  taIdx=Math.min(taIdx,Math.max(0,taList.length-1));
+  taShow();
+}
+{const el=$("ta");
+ el.onclick=e=>{const b=e.target.closest(".nv-b");if(b){taIdx=(taIdx+ +b.dataset.d+taList.length)%taList.length;taShow();return;}taPin=!taPin;taShow();};
+ el.onmouseenter=()=>{const v=taList[taIdx];if(v)lc.setHighlight(v.t0,v.t1);};
+ el.onmouseleave=()=>{if(!taPin)lc.setHighlight(null);};}
+addEventListener("keydown",e=>{if(e.key==="Escape"&&mxOpen())openMx(false);});
+$("prev").onclick=()=>s.go(s.idx-1);$("next").onclick=()=>s.go(s.idx+1);let speed=1,pollTimer=null;const SPEEDS=[1,2,4];
+const pollMs=()=>Math.max(700,2500/speed);
+const startPoll=()=>{clearInterval(pollTimer);pollTimer=setInterval(poll,pollMs());};
+$("play").onclick=()=>s.toggle(700/speed);
+$("ff").onclick=()=>{speed=SPEEDS[(SPEEDS.indexOf(speed)+1)%SPEEDS.length];$("ff").textContent=speed+"×";$("ff").classList.toggle("on",speed>1);
+  if(s.playing){s.stop();s.toggle(700/speed);}
+  if(isLiveRun){fetch("/live/api/speed?x="+speed+"&sid="+SID).catch(()=>{});if(LIVE&&pollTimer)startPoll();}};
+const fz=new URLSearchParams(location.search).get("freeze");
+const lc=new LiveChart({price:$("chart"),wrap:$("cb"),colour,idx:()=>s.idx,onScrub:i=>s.go(i),onZoom:z=>{$("zrst").textContent=(Math.round(z*10)/10)+"×";},onPick:t=>lc.setPick(t),freeze:fz==null?null:+fz});
+$("zin").onclick=()=>lc.zoomBy(1.5);$("zout").onclick=()=>lc.zoomBy(1/1.5);$("zrst").onclick=()=>lc.setZoom(1);
+addEventListener("keydown",e=>{if(e.ctrlKey||e.metaKey||e.altKey||/^(SELECT|INPUT|TEXTAREA)$/.test((e.target||{}).tagName))return;if(e.key==="+"||e.key==="=")lc.zoomBy(1.5);else if(e.key==="-"||e.key==="_")lc.zoomBy(1/1.5);else if(e.key==="0")lc.setZoom(1);});
+{const z=+new URLSearchParams(location.search).get("zoom");if(z)lc.setZoom(z,true);}  // ?zoom=3 starts zoomed in (screenshots)
+const PAIR={actual:["unknown"],best:["latest","range"]};  // one legend entry controls several series
+const syncPairs=()=>{Object.entries(PAIR).forEach(([a,bs])=>bs.forEach(b=>{lc.vis[b]=lc.vis[a]}));lc.vis.strip=lc.vis.flag=true;};  // the spike strip is always shown
+try{const v=JSON.parse(localStorage.getItem("radar-vis")||"null");if(v)Object.keys(lc.vis).forEach(k=>{if(typeof v[k]==="boolean")lc.vis[k]=v[k]})}catch{}
+(new URLSearchParams(location.search).get("hide")||"").split(",").forEach(k=>{if(k in lc.vis)lc.vis[k]=false});syncPairs();  // ?hide=actual,spot,... preselects hidden lines
+$("live").onclick=()=>s.go(s.n-1);
+let busy=false;const poll=async()=>{if(busy)return;busy=true;try{const r=await s.refresh();feedDown=false;if(r){lastGrow=Date.now();await loadTrack();buildDays();navSync();if(r.wasLast)await s.go(s.n-1);else liveBtn();}else liveBtn();}catch{feedDown=true;liveBtn();}busy=false;};
+const loadTrack=()=>api("track",{run:s.run}).then(t=>lc.setTrack(t));
+try{await s.init();const hasLive=isLiveRun||await fetch("/live/api/ping").then(r=>r.ok).catch(()=>false);
+$("tabL").hidden=!hasLive;if(hasLive&&!isLiveRun){const w=newSid();fetch("/live/api/warm?sid="+w).catch(()=>{});$("tabL").href="?run=live&sid="+w;}   // Explore: build the Live session in the background so the Live tab opens instantly
+$("tabE").classList.toggle("on",!isLiveRun);$("tabL").classList.toggle("on",isLiveRun);if(isLiveRun){LIVE=true;reveal=true;$("demo").hidden=true;s.last&&draw(...s.last);$("run").hidden=true;}
+const ac=(s.meta&&s.meta.alerts_config)||{};lc.o.th={hi:ac.spike_high?.watch??.38,lo:ac.spike_low?.watch??.42};loadTrack();runSelect($("run"),s);demoSelect($("demo"),s,"Examples");buildDays();navSync();if(!isLiveRun)keys(s);
+if(LIVE){{const lb=s.runs.find(r=>r.name===s.run).label;$("synth").hidden=!/synthetic|simulated|replay/i.test(lb);$("synth").textContent=/replay/i.test(lb)?"Replay of validation data":"Simulated data";}if(!new URLSearchParams(location.search).get("origin"))await s.go(s.n-1);liveBtn();startPoll();if(new URLSearchParams(location.search).has("livetest")){const i0=s.idx,n0=s.n;for(let k=0;k<+(new URLSearchParams(location.search).get("ffclicks")||0);k++)$("ff").click();await new Promise(r=>setTimeout(r,9000));const d=document.createElement("div");d.textContent=`livetest: origins ${n0} to ${s.n}, index ${i0} to ${s.idx} (following ${s.idx===s.n-1}), speed ${speed}x, stamp ${$("stamp")?.textContent||""} ${fmt.stamp(s.origin)}`;d.style.cssText="padding:8px;font:14px monospace;background:#dfd;color:#000";document.body.prepend(d);}}  // ?livetest=1: report whether the page followed the feedif(new URLSearchParams(location.search).get("drawer")==="1")openDrawer(true);  // ?drawer=1 opens the drawer on load (screenshots)if(fz!=null)await s.go(s.idx+1);  // ?freeze=0.5: show the half-way frame of one hour step (for screenshots)
+ {const hb=new URLSearchParams(location.search).get("hoverblock");if(hb!=null){await new Promise(r=>setTimeout(r,700));const g=document.querySelector(`#chart [data-blk="${hb}"]`);if(g){const r=g.getBoundingClientRect();g.dispatchEvent(new PointerEvent("pointermove",{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));}}}  // ?hoverblock=N: hover the N-th alert badge (screenshots)
+ if(new URLSearchParams(location.search).has("selftest")){  // ?selftest: synthetic drag of the line, result shown at the top (for headless checks)
+  await new Promise(r=>setTimeout(r,600));scrollTo(0,300);const y0=scrollY;const h=$("chart"),i0=s.idx,r0=h.getBoundingClientRect(),px=lc.last.G.pxHr,ev=(t,x)=>h.dispatchEvent(new PointerEvent(t,{pointerId:1,clientX:r0.left+x,clientY:r0.top+60,bubbles:true,buttons:1}));
+  ev("pointerdown",300);ev("pointermove",300-2*px);ev("pointermove",300-3*px);ev("pointerup",300-3*px);await new Promise(r=>setTimeout(r,900));
+  const d=document.createElement("div");d.textContent=`selftest: drag left 3 h -> origin index ${i0} to ${s.idx} (expect ${i0+3}), scrollY ${y0} to ${scrollY} (expect unchanged), chip ${document.querySelector("#chart text[font-weight]")?.textContent}`;d.style.cssText="padding:8px;font:14px monospace;background:#ffd;color:#000";document.body.prepend(d);}
+ $("run").addEventListener("change",()=>setTimeout(()=>{mxKey="";loadMetrics();demoSelect($("demo"),s,"Examples");buildDays();navSync();loadTrack();},300));}catch(e){showError($("chart"),e);}
+
+// ---------- Metrics section (Explore tab only) ----------
+mx.hidden=isLiveRun;$("mbtn").hidden=isLiveRun;let mxScope="run",mxDay=null,mxTimer=null,mxKey="";
+const SV=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Helsinki"}),localDay=t=>SV.format(new Date(t));
+const f1=(x,n=1)=>x==null?"–":(+x).toFixed(n),pc=x=>x==null?"–":Math.round(x*100)+" %";
+const tile=(h,v,sub,title="",cls="")=>`<div class="tile" title="${esc(title)}"><h4>${h}</h4><b class="${cls}">${v}</b><small>${sub}</small></div>`;
+function cat(host,o){ // categorical bar/line chart; o:{cats,bars,lines,hline,ymax,yfmt,onClick,h}
+  const W=Math.max(260,host.clientWidth||300),H=o.h||170,p={l:36,r:8,t:8,b:22},n=o.cats.length,bw=(W-p.l-p.r)/n;
+  const all=[...(o.bars||[]).flatMap(b=>b.v),...(o.lines||[]).flatMap(l=>l.v)].filter(Number.isFinite),ymax=o.ymax||Math.max(...all,o.hline||0)*1.1||1,y=v=>H-p.b-(v/ymax)*(H-p.t-p.b),x=i=>p.l+bw*(i+.5);
+  let h=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  for(let k=0;k<=4;k++){const v=ymax*k/4;h+=`<line class="glx" x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${p.l-4}" y="${y(v)+3}" text-anchor="end">${(o.yfmt||f1)(v)}</text>`}
+  o.cats.forEach((c,i)=>{if(n<=12||i%Math.ceil(n/8)===0)h+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${c}</text>`});
+  (o.bars||[]).forEach(b=>b.v.forEach((v,i)=>{if(Number.isFinite(v))h+=`<rect data-i="${i}" x="${x(i)-bw*.36}" y="${y(v)}" width="${bw*.72}" height="${H-p.b-y(v)}" rx="2" style="fill:${b.c}" opacity=".85"${o.onClick?' cursor="pointer"':""}><title>${o.cats[i]}: ${(o.yfmt||f1)(v)}${b.t?" "+b.t:""}</title></rect>`}));
+  (o.lines||[]).forEach(l=>{const pts=l.v.map((v,i)=>Number.isFinite(v)?`${x(i)},${y(v)}`:null).filter(Boolean);h+=`<polyline fill="none" style="stroke:${l.c}" stroke-width="2" ${l.d?'stroke-dasharray="4 3"':""} points="${pts.join(" ")}"/>`;if(l.dots)l.v.forEach((v,i)=>{if(Number.isFinite(v))h+=`<circle cx="${x(i)}" cy="${y(v)}" r="3" style="fill:${l.c}"><title>${o.cats[i]}: ${(o.yfmt||f1)(v)}</title></circle>`})});
+  if(o.hline!=null)h+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y(o.hline)}" y2="${y(o.hline)}" style="stroke:var(--mute)" stroke-dasharray="5 4"/>`;
+  host.innerHTML=h+"</svg>";if(o.onClick)host.querySelectorAll("rect[data-i]").forEach(r=>r.onclick=()=>o.onClick(+r.dataset.i));
+}
+function reli(host,pts){ // reliability: predicted probability vs observed frequency
+  const W=Math.max(260,host.clientWidth||300),H=204,p={l:36,r:10,t:8,b:40},m=Math.max(.05,...pts.map(q=>Math.max(q.p_mean,q.obs_freq)))*1.1,sx=v=>p.l+v/m*(W-p.l-p.r),sy=v=>H-p.b-v/m*(H-p.t-p.b);
+  let h=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  for(let k=0;k<=4;k++){const v=m*k/4;h+=`<line class="glx" x1="${p.l}" x2="${W-p.r}" y1="${sy(v)}" y2="${sy(v)}"/><text x="${p.l-4}" y="${sy(v)+3}" text-anchor="end">${Math.round(v*100)}%</text><text x="${sx(v)}" y="${H-24}" text-anchor="middle">${Math.round(v*100)}%</text>`}
+  h+=`<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(m)}" y2="${sy(m)}" style="stroke:var(--mute)" stroke-dasharray="5 4"/>`;
+  const mxn=Math.max(...pts.map(q=>q.n));pts.forEach(q=>{h+=`<circle cx="${sx(q.p_mean)}" cy="${sy(q.obs_freq)}" r="${3+5*Math.sqrt(q.n/mxn)}" style="fill:var(--fc)" opacity=".75"><title>predicted ${pc(q.p_mean)} → happened ${pc(q.obs_freq)} (${q.n} quarters)</title></circle>`});
+  return h+`<text x="${(W+p.l)/2}" y="${H-5}" text-anchor="middle">predicted chance (x) vs how often it happened (y)</text></svg>`;
+}
+const GCOL={spot:"#E69F00",history:"#0072B2",dayahead:"#009E73",realtime:"#D55E00",neighbours:"#8C8C8C",calendar:"#CC79A7",other:"#555"};
+function driversHtml(d){
+  if(!d||!d.available)return "";
+  const SHORT={spot:"Spot price",history:"Recent history",dayahead:"Day-ahead forecasts",realtime:"Real-time grid",neighbours:"Neighbours",calendar:"Calendar"};
+  const gs=[...d.groups].sort((x,y)=>y.share-x.share),gm=Math.max(...gs.map(g=>g.share));
+  return `<div class="mxc drv"><h4>What drove the forecasts</h4>
+   <div class="flist gl">${gs.map(g=>`<span title="${esc(g.label)} · first 2 h ${Math.round(g.near*100)} % · hours 3–10 ${Math.round(g.far*100)} %">${esc(SHORT[g.key]||g.label)}</span><span class="v">${Math.round(g.share*100)} %</span><span class="bar big"><i style="width:${g.share/gm*100}%;background:${GCOL[g.key]||GCOL.other}"></i></span>`).join("")}</div>
+</div>`;
+}
+async function loadMetrics(){
+  if(!mxOpen())return;const body=$("mxbody");
+  let q={run:s.run};
+  if(mxScope!=="run"){const day=localDay(s.origin),i0=s.tl.times.findIndex(t=>localDay(t)===day),a=new Date(s.tl.times[i0]),n=mxScope==="day"?1:+mxScope,e=+a+864e5;q.start=new Date(e-n*864e5).toISOString();q.end=new Date(e).toISOString();mxDay=day;}  // day, 7 or 30 days: ending at the end of the forecast's day
+  const key=JSON.stringify(q);if(key===mxKey&&body.innerHTML)return;mxKey=key;
+  let m,ds;try{[m,ds]=await Promise.all([api("metrics",q),api("driver_shares",q).catch(()=>({available:false}))]);}catch(e){body.innerHTML=`<div class="err">${esc(e.message)}</div>`;return;}
+  if(m.empty){body.innerHTML='<p class="note">Not enough forecasts with known outcomes in this scope.</p>';return;}
+  const h=m.headline,good=(c)=>c?"good":"bad",sk=h.skill_vs_spot;
+  $("mxnote").textContent=`${m.n_origins} forecasts · ${m.n_quarters} quarter-hours with known outcomes${mxScope==="day"?" · "+mxDay:mxScope!=="run"?" · "+mxScope+" days to "+mxDay:""}`;
+  const B=h.baseline,bn=B?"official baseline":"simple reference";
+  const cmp=(v,ref,lower=true)=>v==null||ref==null?"":((lower?v<ref:v>ref)?"good":"bad");
+  const cl=(x,c)=>c?`<span class="${c}">${x}</span>`:x;
+  const clim=(a,b)=>a==null||b==null?null:(a+b)/2;
+  const rMae=B?B.mae_p50:h.mae_spot,rSp=B?B.brier_spike_mean:clim(h.brier_high_climatology,h.brier_low_climatology),rDir=B?B.brier_direction:h.brier_direction_climatology;
+  body.innerHTML=`<div class="tiles">`+
+   tile("MAE (p50)",cl(f1(h.mae_p50)+" €",cmp(h.mae_p50,rMae)),`${B?"official baseline "+f1(B.mae_p50)+" · ":""}spot price alone ${f1(h.mae_spot)} · last known price ${f1(h.mae_persistence)}`,"Average miss of the best guess. Green: better than the baseline. Lower is better.")+
+   tile("Skill vs spot",`<span class="${good(sk>0)}">${sk>0?"+":""}${f1(sk*100,1)} %</span>`,"how much smaller the miss is than using the spot price","1 − MAE / MAE of the spot price")+
+   tile("Pinball loss",cl(f1(h.pinball_mean,2),B?cmp(h.pinball_mean,B.pinball_mean):""),`${B?"official baseline "+f1(B.pinball_mean,2)+" · ":""}p10 ${f1(h.pinball_p10,2)} · p90 ${f1(h.pinball_p90,2)}`,"Score for the p10 and p90 quantiles (average of the two). Lower is better.")+
+   tile("Coverage p10–p90",cl(pc(h.coverage),h.coverage>=.8?"good":"bad"),`target 80 % · ${h.coverage>=.8?"at or above target":"band too narrow"}${B?" · baseline "+pc(B.coverage):""} · below ${pc(h.miss_below)} · above ${pc(h.miss_above)}`,"Share of outcomes inside the band")+
+   tile("Band width",f1(h.width_mean,0)+" €",`average p90 − p10${B?" · baseline "+f1(B.width_mean,0)+" €":""}`,"Narrower is sharper, if coverage holds")+
+   tile("Spike Brier",cl(f1(h.brier_spike_mean,4),cmp(h.brier_spike_mean,rSp)),`${B?"official baseline "+f1(B.brier_spike_mean,4)+" · ":""}jump ${f1(h.brier_high,4)} (always-average ${f1(h.brier_high_climatology,4)}) · drop ${f1(h.brier_low,4)} (${f1(h.brier_low_climatology,4)})`,"Squared error of the spike probabilities (mean of jump and drop). Lower is better.")+
+   tile("Spikes caught",pc(h.recall_high),`jumps with a chance ≥ ${pc(h.spike_call_threshold)} · precision ${pc(h.precision_high)} · drops ${pc(h.recall_low)}`,"Recall of price jumps when the forecast chance was at least the call threshold")+
+   tile("Direction Brier",cl(f1(h.brier_direction,4),cmp(h.brier_direction,rDir)),`${B?"official baseline "+f1(B.brier_direction,4)+" · ":""}always-average ${f1(h.brier_direction_climatology,4)} · right side ${pc(h.direction_accuracy)}`,"3-class Brier of up / down / none. Lower is better.")+
+   `</div>${driversHtml(ds)}<div class="mxcharts">
+    <div class="mxc"><h4><span>Error by day <small>click a bar to open that day</small></span><span class="mlg"><span><i class="sq"></i>Ours</span><span><i class="ln"></i>Spot price alone</span></span></h4><div id="mx3"></div></div>
+    <div class="mxc"><h4><span>Error by forecast horizon <small>hours ahead</small></span><span class="mlg"><span><i class="sq"></i>Ours</span><span><i class="ln"></i>Spot price alone</span></span></h4><div id="mx1"></div></div>
+    <div class="mxc"><h4><span>Coverage by horizon</span><span class="mlg"><span><i class="tg"></i>80 % target</span></span></h4><div id="mx2"></div></div>
+    <div class="mxc"><h4>Are the spike chances honest? <small>on the diagonal = yes</small></h4><div id="mx4"></div></div></div>`;
+  const hz=m.by_horizon;
+  cat($("mx1"),{cats:hz.map(r=>r.hour+" h"),bars:[{v:hz.map(r=>r.mae),c:"var(--fc)",t:"€ miss"}],lines:[{v:hz.map(r=>r.mae_spot),c:"var(--spot)",d:1,dots:1}]});
+  cat($("mx2"),{cats:hz.map(r=>r.hour+" h"),lines:[{v:hz.map(r=>r.coverage),c:"var(--fc)",dots:1}],hline:.8,ymax:1,yfmt:v=>Math.round(v*100)+"%"});
+  const dy=m.by_day;
+  cat($("mx3"),{cats:dy.map(r=>r.day.slice(5)),bars:[{v:dy.map(r=>r.mae),c:"var(--fc)",t:"€ miss"}],lines:[{v:dy.map(r=>r.mae_spot),c:"var(--spot)",d:1}],onClick:i=>{const j=s.tl.times.findIndex(t=>localDay(t)===dy[i].day&&fmt.h(t)==="12");const k=j>=0?j:s.tl.times.findIndex(t=>localDay(t)===dy[i].day);if(k>=0){openMx(false);s.go(k);}}});
+  $("mx4").innerHTML=m.reliability.spike.length?reli($("mx4"),m.reliability.spike):"";
+}
+{const P=new URLSearchParams(location.search);const sc=P.get("mxscope")||(P.get("mxday")==="1"?"day":"");if(sc){mxScope=sc;$("mxscope").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.s===sc));}if(P.get("metrics")==="1"&&!isLiveRun){openMx(true);}if(P.get("mxscroll"))setTimeout(()=>{$("mx").querySelector(".body").scrollTop=1e6},3000);}  // ?metrics=1 opens the section on load, ?mxday=1 starts with the day scope (screenshots)
+$("mxscope").querySelectorAll("button").forEach(b=>b.onclick=()=>{mxScope=b.dataset.s;$("mxscope").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));mxKey="";loadMetrics();});
+s.listeners.push(()=>{if(mxScope!=="run"&&mxOpen()){clearTimeout(mxTimer);mxTimer=setTimeout(loadMetrics,350);}});
+addEventListener("resize",()=>{mxKey="";clearTimeout(mxTimer);mxTimer=setTimeout(loadMetrics,300);});
+</script></body></html>

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Output of reproduce.py (python reproduce.py --output reproduced) and other local runs
+reproduced/
+out/
+
+# Dashboard: simulated Live sessions are generated at run time
+dashboard/demo/out/
+
+# Licensed hackathon data (Nord Pool prices) and bundles built for uploading it: never commit
+starter_package*/
+radar_data/
+radar_data*.zip
+inputs.parquet
+spot_nordpool.csv
+actuals_*.csv
+
+# Secrets and local settings
+*.env
+.env
+.secrets/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

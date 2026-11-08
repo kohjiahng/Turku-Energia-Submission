@@ -1,0 +1,83 @@
+{
+  "port": 8765,
+  "runs": {
+    "validation": {
+      "label": "Validation (7 Sep - 4 Oct 2026)",
+      "forecast_csv": "data/forecast_validation.csv"
+    },
+    "test": {
+      "label": "Test (5 Oct - 1 Nov 2026)",
+      "forecast_csv": "data/forecast_test.csv"
+    }
+  },
+  "actuals": {
+    "inputs_parquet": "../../starter_package_v1/data/inputs.parquet",
+    "spot_csv": "../../starter_package_v1/data/spot_nordpool.csv",
+    "actuals_csv": "../../starter_package_v1/data/actuals_validation.csv",
+    "series": {
+      "imbalance": "fi_imbalance_price",
+      "direction": "fi_mfrr_direction",
+      "spot": "fi_spot_price",
+      "wind_fc": "fi_wind_fc_da",
+      "cons_fc": "fi_consumption_fc_da",
+      "solar_fc": "fi_solar_fc_da"
+    }
+  },
+  "glossary_path": "drivers_glossary.json",
+  "timezone": "Europe/Helsinki",
+  "spike_threshold_eur": 50,
+  "cpu_workers": 4,
+  "alerts": {
+    "horizon_quarters": 40,
+    "min_run_quarters": 2,
+    "spike_high": {
+      "watch": 0.38,
+      "act": 0.55,
+      "rise": 0.15,
+      "rise_floor": 0.2
+    },
+    "spike_low": {
+      "watch": 0.42,
+      "act": 0.55,
+      "rise": 0.15,
+      "rise_floor": 0.25
+    },
+    "regulation": {
+      "up_watch": 0.6,
+      "up_act": 0.68,
+      "down_watch": 0.86,
+      "down_act": 0.9,
+      "min_quarters": 4
+    },
+    "revision": {
+      "p50_shift_watch": 30,
+      "p50_shift_act": 80,
+      "min_quarters": 2,
+      "width_ratio": 1.5,
+      "width_abs": 40
+    },
+    "uncertainty": {
+      "width_watch": 260,
+      "width_act": 380,
+      "hist_quantile": 0.95,
+      "min_quarters": 4
+    },
+    "conflict": {
+      "dir_prob": 0.6,
+      "p50_margin": 5,
+      "spike_p": 0.25,
+      "low_dir_prob": 0.35
+    },
+    "expert_review": {
+      "min_rules": 3
+    }
+  },
+  "trust": {
+    "disagreement_parquet": "../ensemble/disagreement_val.parquet"
+  },
+  "hindsight": {
+    "spike_call_threshold": 0.3,
+    "biggest_misses": 8,
+    "reliability_bins": 10
+  }
+}

@@ -1,0 +1,63 @@
+"""Feature names in training order for the shared and near-term inputs."""
+
+KNOWN = [
+    "step",
+    "gap_q",
+    "spot",
+    "spot_vs_ctx",
+    "spot_vs_past",
+    "cons_fc",
+    "wind_fc",
+    "solar_fc",
+    "res_load_fc",
+    "wind_fc_chg",
+    "res_load_chg",
+    "fi_ee_cap",
+    "ee_fi_cap",
+    "hour",
+    "weekday",
+    "holiday",
+    "dst",
+    "o_hour",
+    "o_weekday",
+] + [f"{b}_h_{a}" for b in ("spot", "res_load", "wind") for a in ("mean", "max", "min")]
+KEY_LAGS = [
+    "last_spread",
+    "last_dir",
+    "sp_mean_4",
+    "sp_mean_12",
+    "sp_mean_96",
+    "up_share_4",
+    "up_share_12",
+    "up_share_96",
+    "hi_share_96",
+    "lo_share_96",
+    "sp_absmean_12",
+    "sp_absmean_96",
+    "last_up_minus_spot",
+    "last_dn_minus_spot",
+    "se1_gap_last",
+    "se3_gap_last",
+    "se1_gap_mean4",
+    "cons_err_last",
+    "se1_flow_last",
+    "spot_mean96_past",
+]
+RT_SMALL = [
+    "rt_calc_imb_last",
+    "rt_calc_imb_m30",
+    "rt_calc_imb_m60",
+    "rt_calc_imb_m180",
+    "rt_calc_imb_pos_share60",
+    "rt_calc_imb_chg",
+    "rt_calc_imb_std60",
+    "rt_freq_dev60",
+    "rt_surplus_m60",
+    "rt_wind_rt_last",
+    "rt_wind_rt_err60",
+    "rt_cons_rt_err60",
+    "rt_net_imp_m60",
+]
+FAR = KNOWN + KEY_LAGS
+NEAR = FAR + RT_SMALL
+NEAR_MAX_STEP = 8  # Eight quarter-hours cover the first two hours.
