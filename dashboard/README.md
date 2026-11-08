@@ -57,8 +57,9 @@ Debug parameters: `?snap=<ms>` holds the load event for headless screenshots, `?
 
 Create a Render Blueprint from this repository and select the branch you want to deploy.
 The root `render.yaml` configures a paid Python web service in Frankfurt with a 1 GB
-persistent disk. Set `RADAR_PASSWORD` in Render when prompted. The browser login uses
-`radar` as the username and the password you set.
+persistent disk. The site has no login: anyone who has the URL can open it, so only share the URL with
+authorised people (the organisers have permitted this use). It sends `noindex` headers and a `robots.txt` so search
+engines skip it. To add a login again, set `RADAR_PASSWORD` in Render (browser login: user `radar`, that password).
 
 **Without SSH:** zip the files listed below (flat, no folders), host the zip at a private https link that downloads
 directly (for example a Dropbox link ending in `?dl=1`, or an expiring pre-signed link), and set `RADAR_DATA_URL` to it in
@@ -78,6 +79,6 @@ With SSH, instead transfer these files to `/var/data/` on the service using
 
 Restart the service after the initial upload. Open its HTTPS URL, sign in, and
 check both Explore runs, the Metrics drawer, and the Live tab. Share the URL and
-password with the hackathon audience. Pushes to the connected branch automatically
+URL with the hackathon audience. Pushes to the connected branch automatically
 deploy dashboard code. To update the data or forecast files, replace them on the
 disk and restart the service. Remove the service and its data disk after the event.

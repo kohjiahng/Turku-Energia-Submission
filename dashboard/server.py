@@ -339,6 +339,7 @@ def make_handler(app):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-cache")
             self.send_header("Vary", "Accept-Encoding")
+            self.send_header("X-Robots-Tag", "noindex, nofollow")
             if squeeze:
                 self.send_header("Content-Encoding", "gzip")
             for k, v in (extra or {}).items():

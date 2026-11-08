@@ -28,6 +28,8 @@ def build_handler(base, app, live=None, password=None):
             p = u.path
             if p == "/healthz":
                 return self._send(200, b"OK", "text/plain")
+            if p == "/robots.txt":   # keep search engines away from the (unlisted) site
+                return self._send(200, b"User-agent: *\nDisallow: /\n", "text/plain")
             if credentials is not None:
                 scheme, _, token = self.headers.get("Authorization", "").partition(" ")
                 if scheme.lower() != "basic" or not compare_digest(token.encode(), credentials):
@@ -132,8 +134,8 @@ def main():
     ap.add_argument("--live-history-days", type=float, default=5.0)
     a = ap.parse_args()
     password = os.environ.get("RADAR_PASSWORD")
-    if a.host != "127.0.0.1" and not password:
-        ap.error("RADAR_PASSWORD is required when serving outside localhost")
+    if a.host != "127.0.0.1" and not password:   # no login: anyone who has the URL can open the site (the organisers permit this use)
+        print("WARNING: serving on %s without a password (RADAR_PASSWORD is not set); anyone with the URL can open the site" % a.host, flush=True)
     cfg = adapters.load_config(a.config)
     if data_dir := os.environ.get("RADAR_DATA_DIR"):
         data_dir = os.path.abspath(data_dir)
